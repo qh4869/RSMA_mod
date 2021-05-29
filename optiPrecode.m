@@ -1,6 +1,17 @@
 function [precoder, wsr] = optiPrecode(config, equalizer, mmseWeight, ...
     H, permVec, snr)
 % Fn: the second iteration step
+% 
+% In:
+%   - equalizer: [g]
+%   - mmseWeight: [u]
+%   - H: user channel (before Hermitian)
+%   - permVec: SIC user order
+%   - snr: transmit power to noise
+%
+% Out:
+%   - precoder: optimal result by cvx
+%   - wsr: optimal target value
 
 % initialization
 ordH = H(:, permVec); % the first column is the first SIC user
@@ -15,6 +26,7 @@ cvx_begin quiet
     tolPow = cvx(zeros(config.Nuser));
     mse = cvx(zeros(config.Nuser)); % [\epsilon]
     wmse = cvx(zeros(config.Nuser)); % [\xi] augment weighted MSE
+    rate = cvx(zeros(config.Nuser)); % data rate of each SIC process
     
     for iOrdUser = 1 : config.Nuser
         for iOrdLayer = 1 : iOrdUser
@@ -22,32 +34,32 @@ cvx_begin quiet
                 * precoder(:, iOrdLayer:end), 2) + 1;
             mse(iOrdUser, iOrdLayer) = square_abs(equalizer(iOrdUser, iOrdLayer)) ...
                 * tolPow(iOrdUser, iOrdLayer) ...
-                - 2 * real(equalizer(iOrdUser, iOrdLayer)*ordH(:, iOrdUser)' ...
+                - 2 * real(equalizer(iOrdUser, iOrdLayer) * ordH(:, iOrdUser)' ...
                 * precoder(:, iOrdLayer)) + 1;
             wmse(iOrdUser, iOrdLayer) = mmseWeight(iOrdUser, iOrdLayer) ...
                 * mse(iOrdUser, iOrdLayer) - log2(mmseWeight(iOrdUser, iOrdLayer));
+            rate(iOrdUser, iOrdLayer) = 1 - wmse(iOrdUser, iOrdLayer);
         end
         for iOrdLayer = iOrdUser + 1 : config.Nuser
             tolPow(iOrdUser, iOrdLayer) = NaN;
             mse(iOrdUser, iOrdLayer) = NaN;
             wmse(iOrdUser, iOrdLayer) = NaN;
+            rate(iOrdUser, iOrdLayer) = NaN;
         end
     end
     
-    optiTar = 0;
+    wsr = 0;
     for iOrdLayer = 1 : config.Nuser
-        layerWmse = wmse(:, iOrdLayer);
+        layerWmse = rate(:, iOrdLayer);
         clsIdx = cvx_classify(layerWmse);
-        optiTar = optiTar + ordWeight(iOrdLayer) ...
-            * max(layerWmse(clsIdx~=13)); % ref: cvx_classify.m
+        wsr = wsr + ordWeight(iOrdLayer) ...
+            * min(layerWmse(clsIdx ~= 13)); % ref: cvx_classify.m
     end
     
-    minimize optiTar;
+    maximize wsr;
     subject to
         precoder(:)' * precoder(:) <= snr;
 cvx_end
-
-wsr = 0;
 
 end
 

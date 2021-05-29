@@ -16,6 +16,7 @@ else
     config.snr_dB_vec = 20; % 0: 5: 30;
     config.Nuser = 2; % number of users
     config.weight = [1, 0.001];
+    config.iterStopVal = 1e-6;
     
     % parameters for each case
     switch char(caseName)
