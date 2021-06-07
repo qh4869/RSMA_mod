@@ -15,7 +15,6 @@ function [equalizer, mmseWeight] = mmseEqu(config, precoder, H, permVec)
 %   - mmseWeight: the weights in augment MMSE 
 %       (ordered user * ordered layer) [u]
 
-% initialization
 equalizer = zeros(config.Nuser);
 mmseWeight = zeros(config.Nuser);
 ordH = H(:, permVec); % the first column is the first SIC user

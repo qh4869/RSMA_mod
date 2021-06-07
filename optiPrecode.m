@@ -10,7 +10,7 @@ function [precoder, wsr] = optiPrecode(config, equalizer, mmseWeight, ...
 %   - snr: transmit power to noise
 %
 % Out:
-%   - precoder: optimal result by cvx
+%   - ordPrecoder: optimal result by cvx
 %   - wsr: optimal target value
 
 % initialization
@@ -18,11 +18,11 @@ ordH = H(:, permVec); % the first column is the first SIC user
 ordWeight = config.weight(:, permVec);
 
 cvx_begin quiet
-    variable precoder(config.tx, config.Nuser) complex;
+    variable ordPrecoder(config.tx, config.Nuser) complex;
     
     % initial variables
     % total power (ordered user * ordered layer) [T]
-    % note that it's the function of precoders
+    % note that it's the function of ordPrecoders
     tolPow = cvx(zeros(config.Nuser));
     mse = cvx(zeros(config.Nuser)); % [\epsilon]
     wmse = cvx(zeros(config.Nuser)); % [\xi] augment weighted MSE
@@ -31,11 +31,11 @@ cvx_begin quiet
     for iOrdUser = 1 : config.Nuser
         for iOrdLayer = 1 : iOrdUser
             tolPow(iOrdUser, iOrdLayer) = sum_square_abs(ordH(:, iOrdUser)' ...
-                * precoder(:, iOrdLayer:end), 2) + 1;
+                * ordPrecoder(:, iOrdLayer:end), 2) + 1;
             mse(iOrdUser, iOrdLayer) = square_abs(equalizer(iOrdUser, iOrdLayer)) ...
                 * tolPow(iOrdUser, iOrdLayer) ...
                 - 2 * real(equalizer(iOrdUser, iOrdLayer) * ordH(:, iOrdUser)' ...
-                * precoder(:, iOrdLayer)) + 1;
+                * ordPrecoder(:, iOrdLayer)) + 1;
             wmse(iOrdUser, iOrdLayer) = mmseWeight(iOrdUser, iOrdLayer) ...
                 * mse(iOrdUser, iOrdLayer) - log2(mmseWeight(iOrdUser, iOrdLayer));
             rate(iOrdUser, iOrdLayer) = 1 - wmse(iOrdUser, iOrdLayer);
@@ -50,16 +50,22 @@ cvx_begin quiet
     
     wsr = 0;
     for iOrdLayer = 1 : config.Nuser
-        layerWmse = rate(:, iOrdLayer);
-        clsIdx = cvx_classify(layerWmse);
+        layerRate = rate(:, iOrdLayer);
+        clsIdx = cvx_classify(layerRate);
         wsr = wsr + ordWeight(iOrdLayer) ...
-            * min(layerWmse(clsIdx ~= 13)); % ref: cvx_classify.m
+            * min(layerRate(clsIdx ~= 13)); % ref: cvx_classify.m
     end
     
     maximize wsr;
+
     subject to
-        precoder(:)' * precoder(:) <= snr;
+        ordPrecoder(:)' * ordPrecoder(:) <= snr;
 cvx_end
+
+precoder = zeros(size(ordPrecoder));
+for i = 1 : permVec
+    precoder(:, permVec(i)) = ordPrecoder(:, i);
+end
 
 end
 

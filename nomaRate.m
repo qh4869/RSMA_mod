@@ -13,27 +13,23 @@ nSNRs = length(config.snr_vec);
 R_out = zeros(1, nSNRs);
 orderMat = perms(1: config.Nuser);
 nPerm = size(orderMat, 1);
-wsr_ = 0; % target-function value of iteration
+wsr_ = 0;
 wsr_eachPerm = zeros(nPerm, 1);
 
-% for each snr point
 for iSNR = 1 : nSNRs
     snr = config.snr_vec(iSNR);
-    % initial precoding (MISO) / PA (SISO), (tx * user)
-    % transmit power normalization & user channel projection
-    % assume: noise power = 1
     precoder = H ./ vecnorm(H) * sqrt(snr / config.Nuser);
     
-    % for each perm
     for iPerm = 1: nPerm
-        while 1 % iteration
+        while 1
             [equalizer, mmseWeight] = mmseEqu(config, precoder, H, ...
-                orderMat(iPerm, :)); % step 1
+                orderMat(iPerm, :));
             [precoder, wsr] = optiPrecode(config, equalizer, mmseWeight, ...
-                H, orderMat(iPerm, :), snr); % step 2
-            if abs(wsr - wsr_) < config.iteStopVal
+                H, orderMat(iPerm, :), snr);
+            if abs(wsr - wsr_) < config.iterStopVal
                 break;
             end
+            wsr_ = wsr;
         end
         wsr_eachPerm(iPerm) = wsr;
     end
@@ -44,4 +40,3 @@ for iSNR = 1 : nSNRs
 end
 
 end
-% wait to check the program ...

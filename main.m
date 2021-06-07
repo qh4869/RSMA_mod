@@ -2,7 +2,6 @@ clear;close all;
 fprintf('=============Simulation============\n');
 tic
 CASE = {'debug'};
-% case spelling check
 for i_case = 1:length(CASE)
     if ConfigFile(CASE(i_case), 'true') == 0
         fprintf('A case can not be found!\n');
@@ -12,7 +11,7 @@ end
 
 for i_case = 1:length(CASE)
     clear config;
-    config = ConfigFile(CASE(i_case)); % load configData
+    config = ConfigFile(CASE(i_case));
     
     perChannel(config)
 end
