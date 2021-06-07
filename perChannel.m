@@ -11,7 +11,8 @@ H(:,1) = ones(config.tx, 1);
 H(:,2) = config.userRelativeStrength * exp(1j * config.txRelativeAngle ...
     * (0:config.tx-1)');
 
-R_noma = nomaRate(config, H);
+% R_noma = nomaRate(config, H);
+R_rsma = rsmaRate_onelayer(config, H);
 
 end
 

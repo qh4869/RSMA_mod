@@ -1,4 +1,4 @@
-function [equalizer, mmseWeight] = mmseEqu(config, precoder, H, permVec)
+function [equalizer, mmseWeight] = mmseEqu_noma(config, precoder, H, permVec)
 % Fn: the first iteration step
 %
 % Ref:

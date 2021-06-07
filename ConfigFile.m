@@ -17,6 +17,7 @@ else
     config.Nuser = 2; % number of users
     config.weight = [1, 0.001];
     config.iterStopVal = 1e-3;
+    config.rsRatio = 0.2;
     
     % parameters for each case
     switch char(caseName)
