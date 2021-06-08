@@ -2,7 +2,7 @@ function [comEqualizer, priEqualizer, com_mmseWeight, pri_mmseWeight] = mmseEqu_
 % In:
 %   - comPrecoder: common precoder (tx * 1)
 %   - priPrecoder: private precoder (tx * user)
-%   - H: MAC channel
+%   - H: MAC channel (tx * user)
 %
 % Out:
 %   - comEqualizer: common equalizer (user * 1)
@@ -16,16 +16,18 @@ priPow = sum(abs(H' * priPrecoder).^2, 2) + 1; % (user * 1)
 tolPow = priPow + abs(H' * comPrecoder).^2; % (user * 1)
 priIntPow = zeros(config.Nuser, 1);
 tolIntPow = zeros(config.Nuser, 1);
+com_mmseWeight = zeros(config.Nuser, 1);
+pri_mmseWeight = zeros(config.Nuser, 1);
 for iUser = 1 : config.Nuser
-    comEqualizer(iUser) = comPrecoder' * H / tolPow(iUser);
-    priEqualizer(iUser) = priPrecoder' * H / priPow(iUser);
+    comEqualizer(iUser) = comPrecoder' * H(:, iUser) / tolPow(iUser);
+    priEqualizer(iUser) = priPrecoder(:, iUser)' * H(:, iUser) / priPow(iUser);
     tolIntPow(iUser) = priPow(iUser);
     priIntPow(iUser) = priPow(iUser) - abs(H(:, iUser)' * priPrecoder(:, iUser)).^2;
     % calculate conventional MMSE
     comMMSE = tolPow(iUser)^(-1) * tolIntPow(iUser);
-    com_mmseWeight = comMMSE^(-1);
+    com_mmseWeight(iUser) = comMMSE^(-1);
     priMMSE = priPow(iUser)^(-1) * priIntPow(iUser);
-    pri_mmseWeight = priMMSE^(-1);
+    pri_mmseWeight(iUser) = priMMSE^(-1);
 end
 end
 

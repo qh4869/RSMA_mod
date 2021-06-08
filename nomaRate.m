@@ -13,14 +13,16 @@ nSNRs = length(config.snr_vec);
 R_out = zeros(1, nSNRs);
 orderMat = perms(1: config.Nuser);
 nPerm = size(orderMat, 1);
-wsr_ = 0;
-wsr_eachPerm = zeros(nPerm, 1);
 
 for iSNR = 1 : nSNRs
+    iSNR
+    
     snr = config.snr_vec(iSNR);
     precoder = H ./ vecnorm(H) * sqrt(snr / config.Nuser);
     
+    wsr_eachPerm = zeros(nPerm, 1);
     for iPerm = 1: nPerm
+        wsr_ = 0;
         while 1
             [equalizer, mmseWeight] = mmseEqu_noma(config, precoder, H, ...
                 orderMat(iPerm, :));

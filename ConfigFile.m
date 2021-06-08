@@ -13,7 +13,7 @@ if strcmpi(checkFlag, 'true')
     out = ismember(caseName, caseSet);
 else
     % common parameters
-    config.snr_dB_vec = 20; % 0: 5: 30;
+    config.snr_dB_vec = 0: 5: 30;
     config.Nuser = 2; % number of users
     config.weight = [1, 0.001];
     config.iterStopVal = 1e-3;
